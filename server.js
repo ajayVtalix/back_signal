@@ -78,8 +78,11 @@ io.on("connection", (socket) => {
 
       // 5️⃣ Signal readiness
       if (room.size === 2) {
-        const [firstSocketId] = [...room].filter(id => id !== socket.id);
-        socket.emit("ready", firstSocketId);
+        const [a, b] = [...room];
+
+        // tell BOTH clients the other peer id
+        io.to(a).emit("ready", b);
+        io.to(b).emit("ready", a);
       } else {
         socket.emit("waiting");
       }
