@@ -30,7 +30,6 @@ io.on("connection", (socket) => {
   // ==============================
   socket.on("join-room", async ({ roomId, token }) => {
     try {
-      // 1️⃣ Validate appointment & role
       const res = await fetch(
         `${BACKEND_URL}/appointments/${roomId}/can-join`,
         {
@@ -109,9 +108,20 @@ io.on("connection", (socket) => {
   // ==============================
   // CHAT
   // ==============================
-  socket.on("chat-message", ({ message }) => {
-    socket.to(socket.roomId).emit("chat-message", { message });
+  // socket.on("chat-message", ({ message }) => {
+  //   socket.to(socket.roomId).emit("chat-message", { message });
+  // });
+
+  socket.on("chat-message", ({ roomId, message }) => {
+    if (!roomId) return;
+
+    socket.to(roomId).emit("chat-message", {
+      message,
+      from: socket.id
+    });
   });
+
+
 
   // ==============================
   // END CALL
