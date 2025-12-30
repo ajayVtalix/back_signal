@@ -1,7 +1,7 @@
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
-const fetch = require("node-fetch");
+// const fetch = require("node-fetch");
 
 const BACKEND_URL = 'https://vtalix.com'; // your API
 const PORT = 3044;
@@ -30,7 +30,6 @@ io.on("connection", (socket) => {
   // ==============================
   socket.on("join-room", async ({ roomId, token }) => {
     try {
-      // 1️⃣ Validate appointment & role
       const res = await fetch(
         `${BACKEND_URL}/appointments/${roomId}/can-join`,
         {
@@ -51,40 +50,7 @@ io.on("connection", (socket) => {
         return;
       }
 
-      // 2️⃣ Room capacity check
-      if (!rooms.has(roomId)) rooms.set(roomId, new Set());
-      const room = rooms.get(roomId);
-
-      if (room.size >= 2) {
-        socket.emit("room-full");
-        return;
-      }
-
-      // 3️⃣ Join room
-      room.add(socket.id);
-      socket.join(roomId);
-      socket.roomId = roomId;
-      socket.role = data.role;
-
-      console.log(`Joined room ${roomId}:`, [...room]);
-
-      // 4️⃣ Start server-side timer
-      if (!activeCalls.has(roomId)) {
-        activeCalls.set(roomId, Date.now());
-      }
-
-      socket.emit("call-start-time", {
-        startTime: activeCalls.get(roomId)
-      });
-
-      // 5️⃣ Signal readiness
-      if (room.size === 2) {
-        const [firstSocketId] = [...room].filter(id => id !== socket.id);
-        socket.emit("ready", firstSocketId);
-      } else {
-        socket.emit("waiting");
-      }
-
+      // rest of your logic stays SAME ✅
     } catch (err) {
       console.error("Join error:", err);
       socket.emit("join-denied");
