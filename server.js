@@ -102,6 +102,14 @@ io.on("connection", (socket) => {
       return;
     }
 
+    console.log("[signal] join-room", {
+      socketId: socket.id,
+      roomId,
+      participantId,
+      role,
+      displayName,
+    });
+
     leaveCurrentRoom(socket, { notify: false });
 
     const room = getRoom(roomId);
@@ -139,11 +147,18 @@ io.on("connection", (socket) => {
       participantId,
       participants,
     });
+    console.log("[signal] joined-room", {
+      socketId: socket.id,
+      roomId,
+      participantId,
+      participantsCount: participants.length,
+    });
     socket.emit("chat-history", room.chatHistory);
 
     const peers = participants.filter((entry) => entry.participantId !== participantId);
 
     if (peers.length === 0) {
+      console.log("[signal] waiting", { roomId, participantId });
       socket.emit("waiting", { roomId });
       return;
     }
@@ -155,6 +170,12 @@ io.on("connection", (socket) => {
       participantId: peer.participantId,
       shouldCreateOffer: true,
     });
+    console.log("[signal] ready", {
+      roomId,
+      participantId,
+      peerSocketId: peer.socketId,
+      peerParticipantId: peer.participantId,
+    });
 
     socket.to(roomId).emit("participant-joined", {
       roomId,
@@ -164,6 +185,12 @@ io.on("connection", (socket) => {
 
   socket.on("offer", ({ offer, to }) => {
     if (!to) return;
+
+    console.log("[signal] offer", {
+      fromSocketId: socket.id,
+      toSocketId: to,
+      roomId: socket.data.roomId,
+    });
 
     io.to(to).emit("offer", {
       offer,
@@ -176,6 +203,12 @@ io.on("connection", (socket) => {
   socket.on("answer", ({ answer, to }) => {
     if (!to) return;
 
+    console.log("[signal] answer", {
+      fromSocketId: socket.id,
+      toSocketId: to,
+      roomId: socket.data.roomId,
+    });
+
     io.to(to).emit("answer", {
       answer,
       from: socket.id,
@@ -186,6 +219,12 @@ io.on("connection", (socket) => {
 
   socket.on("ice-candidate", ({ candidate, to }) => {
     if (!to || !candidate) return;
+
+    console.log("[signal] ice-candidate", {
+      fromSocketId: socket.id,
+      toSocketId: to,
+      roomId: socket.data.roomId,
+    });
 
     io.to(to).emit("ice-candidate", {
       candidate,
