@@ -12,6 +12,17 @@ const io = new Server(server, {
   },
 });
 
+const SERVER_VERSION = "signal-debug-2026-04-01-v2";
+
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "back_signal",
+    version: SERVER_VERSION,
+    rooms: rooms.size,
+  });
+});
+
 const rooms = new Map();
 
 function getRoom(roomId) {
@@ -83,7 +94,30 @@ function leaveCurrentRoom(socket, { notify = true } = {}) {
 }
 
 io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+  console.log("[signal] connection", {
+    socketId: socket.id,
+    version: SERVER_VERSION,
+  });
+
+  socket.onAny((eventName, payload) => {
+    if (eventName === "ice-candidate") {
+      console.log("[signal] event", {
+        socketId: socket.id,
+        eventName,
+        roomId: socket.data.roomId || payload?.roomId || null,
+        hasCandidate: Boolean(payload?.candidate),
+        to: payload?.to || null,
+      });
+      return;
+    }
+
+    console.log("[signal] event", {
+      socketId: socket.id,
+      eventName,
+      roomId: socket.data.roomId || payload?.roomId || null,
+      to: payload?.to || null,
+    });
+  });
 
   socket.on("join-room", (payload) => {
     const roomId =
@@ -269,12 +303,16 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     leaveCurrentRoom(socket);
-    console.log("User disconnected:", socket.id);
+    console.log("[signal] disconnect", {
+      socketId: socket.id,
+      roomId: socket.data.roomId || null,
+    });
   });
 });
 
 const PORT = 3044;
 
 server.listen(PORT, () => {
-  console.log(`Signaling server are running....... port ${PORT}`);
+  console.log(`🚀 Signaling server running on ${PORT}`);
+  console.log(`[signal] version ${SERVER_VERSION}`);
 });
